@@ -1,10 +1,41 @@
 /** @jsxImportSource @emotion/react */
-import React, {MouseEvent, useState} from 'react';
+import React, {MouseEvent, useEffect, useState} from 'react';
 import logo from './logo.svg';
 import './App.css';
 import {css} from "@emotion/react";
 
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+const UPDATE_INTERVAL = MINUTE;
+
 const KanbanCard = ({title, status}: any) => {
+    const [displayTime, setDisplayTime] = useState(status);
+    useEffect(() => {
+        const updateDisplayTime = () => {
+            const now = new Date().getTime();
+            const last = new Date(status).getTime()
+
+            const timePassed = now - last;
+            console.log('timePassed: ', timePassed);
+            let relativeTime = '刚刚';
+            if (MINUTE <= timePassed && timePassed < HOUR) {
+                relativeTime = `${Math.ceil(timePassed / MINUTE)} 分钟前`;
+            } else if (HOUR <= timePassed && timePassed < DAY) {
+                relativeTime = `${Math.ceil(timePassed / HOUR)} 小时前`;
+            } else if (DAY <= timePassed) {
+                relativeTime = `${Math.ceil(timePassed / DAY)} 天前`;
+            }
+            setDisplayTime(relativeTime);
+        }
+        const timerId = setInterval(updateDisplayTime, UPDATE_INTERVAL)
+        updateDisplayTime()
+
+        return () => {
+            clearInterval(timerId);
+        }
+    }, [status])
+
     return (
         //     <li className="kanban-card">
         //     <div className="card-title">{title}</div>
@@ -16,7 +47,7 @@ const KanbanCard = ({title, status}: any) => {
                 text-align: right;
                 font-size: 0.8rem;
                 color: #333;
-            `}>{status}</div>
+            `}>{displayTime}</div>
         </li>
     )
 }
@@ -137,20 +168,20 @@ const COLUMN_BG_COLORS = {
 function App() {
     const [showAdd, setShowAdd] = useState(false);
     const [todoList, setTodoList] = useState([
-        {title: '开发任务-1', status: '22-05-22 18:15'},
-        {title: '开发任务-3', status: '22-05-22 18:16'},
-        {title: '开发任务-5', status: '22-05-22 18:17'},
-        {title: '测试任务-3', status: '22-05-22 18:18'}
+        {title: '开发任务-1', status: '2024-05-22 18:15'},
+        {title: '开发任务-3', status: '2024-05-22 18:16'},
+        {title: '开发任务-5', status: '2024-05-22 18:17'},
+        {title: '测试任务-3', status: '2024-05-22 18:18'}
     ]);
 
     const [ongoingList] = useState([
-        {title: '开发任务-4', status: '22-05-22 18:15'},
-        {title: '开发任务-6', status: '22-05-22 18:15'},
-        {title: '测试任务-2', status: '22-05-22 18:15'}
+        {title: '开发任务-4', status: '2024-05-22 18:15'},
+        {title: '开发任务-6', status: '2024-05-22 18:15'},
+        {title: '测试任务-2', status: '2024-05-22 18:15'}
     ]);
     const [doneList] = useState([
-        {title: '开发任务-2', status: '22-05-22 18:15'},
-        {title: '测试任务-1', status: '22-05-22 18:15'}
+        {title: '开发任务-2', status: '2024-05-22 18:15'},
+        {title: '测试任务-1', status: '2024-05-22 18:15'}
     ]);
 
     const handleAdd = (_: MouseEvent) => {
