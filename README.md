@@ -51,3 +51,12 @@ You can learn more in
 the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+## 查看npm 镜像
+```
+npm get registry
+
+// https://registry.npmjs.org/  官方镜像
+
+npm set registry https://registry.npmmirror.com/
+```
