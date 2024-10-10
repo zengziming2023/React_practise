@@ -2,23 +2,14 @@ import React, {MouseEvent, useState} from 'react';
 import logo from './logo.svg';
 import './App.css';
 
-interface KanbanCardProps {
-    title: string;
-    status: string;
-}
-
-const KanbanCard = ({title, status}: KanbanCardProps) => {
+const KanbanCard = ({title, status}: any) => {
     return <li className="kanban-card">
         <div className="card-title">{title}</div>
         <div className="card-status">{status}</div>
     </li>
 }
 
-interface NewCardProps {
-    onSubmit: (title: string) => void;
-}
-
-const KanbanNewCard = ({onSubmit}: NewCardProps) => {
+const KanbanNewCard = ({onSubmit}: any) => {
     const [title, setTitle] = useState('');
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTitle(e.target.value);
@@ -43,6 +34,27 @@ const KanbanNewCard = ({onSubmit}: NewCardProps) => {
         </li>
     );
 };
+
+const Kanban = ({children}: any) => {
+    return (
+        <main className="kanban-board">
+            {children}
+        </main>
+    )
+}
+
+const KanbanColumn = ({children, className, title}: any) => {
+    let css = `kanban-column ${className}`
+    return (
+        <section className={css}>
+            <h2>{title}
+            </h2>
+            <ul>
+                {children}
+            </ul>
+        </section>
+    )
+}
 
 function App() {
     const [showAdd, setShowAdd] = useState(false);
@@ -73,35 +85,30 @@ function App() {
         // setShowAdd(false)
     }
 
+    // jsx 赋值给 变量
+    const toDoTitle = (<>待处理
+            <button disabled={showAdd} onClick={handleAdd}>&#8853; 添加新卡片</button>
+        </>
+    )
+
     return (
         <div className="App">
             <header className="App-header">
                 <h1>我的看板</h1>
                 <img src={logo} className="App-logo" alt="logo"/>
             </header>
-            <main className="kanban-board">
-                <section className="kanban-column column-todo">
-                    <h2>待处理
-                        <button disabled={showAdd} onClick={handleAdd}>&#8853; 添加新卡片</button>
-                    </h2>
-                    <ul>
-                        {showAdd && <KanbanNewCard onSubmit={handleSubmit}/>}
-                        {todoList.map(item => <KanbanCard title={item.title} status={item.status}/>)}
-                    </ul>
-                </section>
-                <section className="kanban-column column-ongoing">
-                    <h2>进行中</h2>
-                    <ul>
-                        {ongoingList.map(item => <KanbanCard title={item.title} status={item.status}/>)}
-                    </ul>
-                </section>
-                <section className="kanban-column column-done">
-                    <h2>已完成</h2>
-                    <ul>
-                        {doneList.map(item => <KanbanCard title={item.title} status={item.status}/>)}
-                    </ul>
-                </section>
-            </main>
+            <Kanban>
+                <KanbanColumn className="column-todo" title={toDoTitle} list={todoList}>
+                    {showAdd && <KanbanNewCard onSubmit={handleSubmit}/>}
+                    {todoList.map(item => <KanbanCard {...item}/>)}
+                </KanbanColumn>
+                <KanbanColumn className={"column-ongoing"} title="进行中">
+                    {ongoingList.map(item => <KanbanCard {...item}/>)}
+                </KanbanColumn>
+                <KanbanColumn className={"column-done"} title="已完成">
+                    {doneList.map(item => <KanbanCard {...item}/>)}
+                </KanbanColumn>
+            </Kanban>
         </div>
     );
 }
