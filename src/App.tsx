@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import React, {MouseEvent, useEffect, useState} from 'react';
+import React, {MouseEvent, useEffect, useRef, useState} from 'react';
 import logo from './logo.svg';
 import './App.css';
 import {css} from "@emotion/react";
@@ -54,6 +54,12 @@ const KanbanCard = ({title, status}: any) => {
 
 const KanbanNewCard = ({onSubmit}: any) => {
     const [title, setTitle] = useState('');
+    const inputElem = useRef<HTMLInputElement>(null)
+
+    useEffect(() => {
+        inputElem?.current?.focus()
+    }, [])
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTitle(e.target.value);
     }
@@ -77,7 +83,8 @@ const KanbanNewCard = ({onSubmit}: any) => {
                 <input type="text"
                        value={title}
                        onChange={handleChange}
-                       onKeyDown={handleSubmit}/>
+                       onKeyDown={handleSubmit}
+                       ref={inputElem}/>
             </div>
         </li>
     );
@@ -168,20 +175,20 @@ const COLUMN_BG_COLORS = {
 function App() {
     const [showAdd, setShowAdd] = useState(false);
     const [todoList, setTodoList] = useState([
-        {title: '开发任务-1', status: '2024-05-22 18:15'},
-        {title: '开发任务-3', status: '2024-05-22 18:16'},
-        {title: '开发任务-5', status: '2024-05-22 18:17'},
-        {title: '测试任务-3', status: '2024-05-22 18:18'}
+        {title: '开发任务-1', status: '2024-10-11 8:15'},
+        {title: '开发任务-3', status: '2024-10-11 8:16'},
+        {title: '开发任务-5', status: '2024-10-11 8:17'},
+        {title: '测试任务-3', status: '2024-10-11 8:18'}
     ]);
 
     const [ongoingList] = useState([
-        {title: '开发任务-4', status: '2024-05-22 18:15'},
-        {title: '开发任务-6', status: '2024-05-22 18:15'},
-        {title: '测试任务-2', status: '2024-05-22 18:15'}
+        {title: '开发任务-4', status: '2024-10-11 8:15'},
+        {title: '开发任务-6', status: '2024-10-11 8:15'},
+        {title: '测试任务-2', status: '2024-10-11 8:15'}
     ]);
     const [doneList] = useState([
-        {title: '开发任务-2', status: '2024-05-22 18:15'},
-        {title: '测试任务-1', status: '2024-05-22 18:15'}
+        {title: '开发任务-2', status: '2024-10-11 8:15'},
+        {title: '测试任务-1', status: '2024-10-11 8:15'}
     ]);
 
     const handleAdd = (_: MouseEvent) => {
