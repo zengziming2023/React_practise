@@ -7,9 +7,9 @@ import {css} from "@emotion/react";
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
-const UPDATE_INTERVAL = MINUTE;
+const UPDATE_INTERVAL = 5 * 1000; //MINUTE;
 
-const KanbanCard = ({title, status}: any) => {
+const KanbanCard = ({title, status, onDragStart}: any) => {
     const [displayTime, setDisplayTime] = useState(status);
     useEffect(() => {
         const updateDisplayTime = () => {
@@ -36,12 +36,17 @@ const KanbanCard = ({title, status}: any) => {
         }
     }, [status])
 
+    const handleDragStart = (evt: React.DragEvent) => {
+        evt.dataTransfer.effectAllowed = 'move';
+        evt.dataTransfer.setData('text/paint', title);
+        onDragStart && onDragStart(evt);
+    }
     return (
         //     <li className="kanban-card">
         //     <div className="card-title">{title}</div>
         //     <div className="card-status">{status}</div>
         // </li>
-        <li css={kanbanCardStyles}>
+        <li css={kanbanCardStyles} draggable={true} onDragStart={handleDragStart}>
             <div css={kanbanCardTitleStyles}>{title}</div>
             <div css={css`
                 text-align: right;
@@ -104,10 +109,45 @@ const Kanban = ({children}: any) => {
     )
 }
 
-const KanbanColumn = ({children, bgColor, title}: any) => {
+const KanbanColumn = ({
+                          children, bgColor, title, setIsDragSource = () => {
+    },
+                          setIsDragTarget = (isTarget: boolean) => {
+                          },
+                          onDrop
+                      }: any) => {
+
+    const onDragStart = (e: React.DragEvent) => {
+        setIsDragSource(true)
+    }
+
+    const onDragOver = (e: React.DragEvent) => {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move';
+        setIsDragTarget(true)
+    }
+
+    const onDropFunc = (e: React.DragEvent) => {
+        e.preventDefault()
+        onDrop && onDrop(e)
+    }
+
+    const onDragLeave = (e: React.DragEvent) => {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'none'
+        setIsDragTarget(false)
+    }
+
+    const onDragEnd = (e: React.DragEvent) => {
+        e.preventDefault()
+        setIsDragTarget(false)
+    }
+
+
     // let css = `kanban-column ${className}`
     return (
-        <section css={css`
+        <section onDragStart={onDragStart} onDrop={onDropFunc} onDragOver={onDragOver} onDragLeave={onDragLeave}
+                 onDragEnd={onDragEnd} css={css`
             flex: 1 1;
             display: flex;
             flex-direction: column;
@@ -174,28 +214,38 @@ const COLUMN_BG_COLORS = {
 };
 
 const DATA_STORE_KEY = 'kanban-data-store';
+const COLUMN_KEY_TODO = 'todo';
+const COLUMN_KEY_ONGOING = 'ongoing';
+const COLUMN_KEY_DONE = 'done';
 
 function App() {
     const [showAdd, setShowAdd] = useState(false);
     const [todoList, setTodoList] = useState(new Array<{ title: string, status: string }>());
+    const [ongoingList, setOngoingList] = useState(new Array<{ title: string, status: string }>());
+    const [doneList, setDoneList] = useState(new Array<{ title: string, status: string }>());
+
     const [isLoading, setIsLoading] = useState(false);
 
-    const [ongoingList] = useState([
-        {title: '开发任务-4', status: '2024-10-11 8:15'},
-        {title: '开发任务-6', status: '2024-10-11 8:15'},
-        {title: '测试任务-2', status: '2024-10-11 8:15'}
-    ]);
-    const [doneList] = useState([
-        {title: '开发任务-2', status: '2024-10-11 8:15'},
-        {title: '测试任务-1', status: '2024-10-11 8:15'}
-    ]);
+    const [draggedItem, setDraggedItem] = useState<{ title: string, status: string } | null>(null);
+    const [dragSource, setDragSource] = useState<string | null>(null);
+    const [dragTarget, setDragTarget] = useState<string | null>(null);
+
+    // const [ongoingList] = useState([
+    //     {title: '开发任务-4', status: '2024-10-11 8:15'},
+    //     {title: '开发任务-6', status: '2024-10-11 8:15'},
+    //     {title: '测试任务-2', status: '2024-10-11 8:15'}
+    // ]);
+    // const [doneList] = useState([
+    //     {title: '开发任务-2', status: '2024-10-11 8:15'},
+    //     {title: '测试任务-1', status: '2024-10-11 8:15'}
+    // ]);
 
     const handleAdd = (_: MouseEvent) => {
         setShowAdd(true);
     }
 
     const handleSubmit = (title: string) => {
-        setTodoList(curList => [{title: title, status: new Date().toLocaleTimeString()}, ...curList])
+        setTodoList(curList => [{title: title, status: new Date().toDateString()}, ...curList])
         // todoList.unshift({title: title, status: new Date().toDateString()})
         // setShowAdd(false)
     }
@@ -204,6 +254,37 @@ function App() {
         const data = JSON.stringify(todoList)
         window.localStorage.setItem(DATA_STORE_KEY, data)
 
+    }
+
+    const getSetList = (key: string) => {
+        if (key === COLUMN_KEY_TODO) {
+            return setTodoList
+        } else if (key === COLUMN_KEY_ONGOING) {
+            return setOngoingList
+        } else {
+            return setDoneList
+        }
+    }
+
+    const handleDrop = (evt: DragEvent) => {
+        if (!draggedItem || !dragSource || !dragTarget || dragSource === dragTarget) {
+            return;
+        }
+        const updaters = {
+            [COLUMN_KEY_TODO]: setTodoList,
+            [COLUMN_KEY_ONGOING]: setOngoingList,
+            [COLUMN_KEY_DONE]: setDoneList
+        }
+
+        if (dragSource) {
+            getSetList(dragSource)((currentStat) =>
+                currentStat.filter((item) => !Object.is(item, draggedItem))
+            );
+        }
+
+        if (dragTarget) {
+            getSetList(dragTarget)((currentStat) => [draggedItem, ...currentStat]);
+        }
     }
 
     useEffect(() => {
@@ -234,15 +315,27 @@ function App() {
             </header>
             <Kanban>
                 {isLoading ? (<KanbanColumn bgColor={COLUMN_BG_COLORS.loading} title={'loading...'}/>) :
-                    (<KanbanColumn bgColor={COLUMN_BG_COLORS.todo} title={toDoTitle} list={todoList}>
+                    (<KanbanColumn bgColor={COLUMN_BG_COLORS.todo} title={toDoTitle} list={todoList}
+                                   setIsDragSource={(isSrc: boolean) => setDragSource(isSrc ? COLUMN_KEY_TODO : null)}
+                                   setIsDragTarget={(isTgt: boolean) => setDragTarget(isTgt ? COLUMN_KEY_TODO : null)}
+                                   onDrop={handleDrop}>
                         {showAdd && <KanbanNewCard onSubmit={handleSubmit}/>}
-                        {todoList.map(item => <KanbanCard key={item.title} {...item}/>)}
+                        {todoList.map(item => <KanbanCard key={item.title} onDragStart={() => setDraggedItem(item)}
+                                                          {...item}/>)}
                     </KanbanColumn>)}
-                <KanbanColumn bgColor={COLUMN_BG_COLORS.ongoing} title="进行中">
-                    {ongoingList.map(item => <KanbanCard key={item.title} {...item}/>)}
+                <KanbanColumn bgColor={COLUMN_BG_COLORS.ongoing} title="进行中"
+                              setIsDragSource={(isSrc: boolean) => setDragSource(isSrc ? COLUMN_KEY_ONGOING : null)}
+                              setIsDragTarget={(isTgt: boolean) => setDragTarget(isTgt ? COLUMN_KEY_ONGOING : null)}
+                              onDrop={handleDrop}>
+                    {ongoingList.map(item => <KanbanCard key={item.title}
+                                                         onDragStart={() => setDraggedItem(item)} {...item}/>)}
                 </KanbanColumn>
-                <KanbanColumn bgColor={COLUMN_BG_COLORS.done} title="已完成">
-                    {doneList.map(item => <KanbanCard key={item.title} {...item}/>)}
+                <KanbanColumn bgColor={COLUMN_BG_COLORS.done} title="已完成"
+                              setIsDragSource={(isSrc: boolean) => setDragSource(isSrc ? COLUMN_KEY_DONE : null)}
+                              setIsDragTarget={(isTgt: boolean) => setDragTarget(isTgt ? COLUMN_KEY_DONE : null)}
+                              onDrop={handleDrop}>
+                    {doneList.map(item => <KanbanCard key={item.title}
+                                                      onDragStart={() => setDraggedItem(item)} {...item}/>)}
                 </KanbanColumn>
             </Kanban>
         </div>
