@@ -270,11 +270,6 @@ function App() {
         if (!draggedItem || !dragSource || !dragTarget || dragSource === dragTarget) {
             return;
         }
-        const updaters = {
-            [COLUMN_KEY_TODO]: setTodoList,
-            [COLUMN_KEY_ONGOING]: setOngoingList,
-            [COLUMN_KEY_DONE]: setDoneList
-        }
 
         if (dragSource) {
             getSetList(dragSource)((currentStat) =>
