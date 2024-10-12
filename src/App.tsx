@@ -167,19 +167,18 @@ const kanbanCardTitleStyles = css`
 `;
 
 const COLUMN_BG_COLORS = {
+    loading: '#E3E3E3',
     todo: '#C9AF97',
     ongoing: '#FFE799',
     done: '#C0E8BA'
 };
 
+const DATA_STORE_KEY = 'kanban-data-store';
+
 function App() {
     const [showAdd, setShowAdd] = useState(false);
-    const [todoList, setTodoList] = useState([
-        {title: '开发任务-1', status: '2024-10-11 8:15'},
-        {title: '开发任务-3', status: '2024-10-11 8:16'},
-        {title: '开发任务-5', status: '2024-10-11 8:17'},
-        {title: '测试任务-3', status: '2024-10-11 8:18'}
-    ]);
+    const [todoList, setTodoList] = useState(new Array<{ title: string, status: string }>());
+    const [isLoading, setIsLoading] = useState(false);
 
     const [ongoingList] = useState([
         {title: '开发任务-4', status: '2024-10-11 8:15'},
@@ -196,10 +195,28 @@ function App() {
     }
 
     const handleSubmit = (title: string) => {
-        setTodoList(curList => [{title: title, status: new Date().toDateString()}, ...curList])
+        setTodoList(curList => [{title: title, status: new Date().toLocaleTimeString()}, ...curList])
         // todoList.unshift({title: title, status: new Date().toDateString()})
         // setShowAdd(false)
     }
+
+    const handleSaveAll = () => {
+        const data = JSON.stringify(todoList)
+        window.localStorage.setItem(DATA_STORE_KEY, data)
+
+    }
+
+    useEffect(() => {
+        setIsLoading(true);
+        const data = window.localStorage.getItem(DATA_STORE_KEY)
+        setTimeout(() => {
+            if (data) {
+                const kanbanData = JSON.parse(data)
+                setTodoList(kanbanData)
+            }
+            setIsLoading(false);
+        }, 1000)
+    }, [])
 
     // jsx 赋值给 变量
     const toDoTitle = (<>待处理
@@ -210,14 +227,17 @@ function App() {
     return (
         <div className="App">
             <header className="App-header">
-                <h1>我的看板</h1>
+                <h1>我的看板
+                    <button onClick={handleSaveAll}>保存所有数据</button>
+                </h1>
                 <img src={logo} className="App-logo" alt="logo"/>
             </header>
             <Kanban>
-                <KanbanColumn bgColor={COLUMN_BG_COLORS.todo} title={toDoTitle} list={todoList}>
-                    {showAdd && <KanbanNewCard onSubmit={handleSubmit}/>}
-                    {todoList.map(item => <KanbanCard key={item.title} {...item}/>)}
-                </KanbanColumn>
+                {isLoading ? (<KanbanColumn bgColor={COLUMN_BG_COLORS.loading} title={'loading...'}/>) :
+                    (<KanbanColumn bgColor={COLUMN_BG_COLORS.todo} title={toDoTitle} list={todoList}>
+                        {showAdd && <KanbanNewCard onSubmit={handleSubmit}/>}
+                        {todoList.map(item => <KanbanCard key={item.title} {...item}/>)}
+                    </KanbanColumn>)}
                 <KanbanColumn bgColor={COLUMN_BG_COLORS.ongoing} title="进行中">
                     {ongoingList.map(item => <KanbanCard key={item.title} {...item}/>)}
                 </KanbanColumn>
@@ -226,7 +246,8 @@ function App() {
                 </KanbanColumn>
             </Kanban>
         </div>
-    );
+    )
+        ;
 }
 
 export default App;
